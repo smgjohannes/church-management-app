@@ -113,6 +113,10 @@ const MemberManagement = () => {
   const [visiblePopupCard, setVisiblePopupCard] = useState(false);
   const [form] = Form.useForm();
   const [editData, setEditData] = useState(null);
+  const [disabledMembers, setDisabledMembers] = useState([]);
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [ageFilter, setAgeFilter] = useState(null);
 
   const showModal = () => {
     setVisible(true);
@@ -146,10 +150,12 @@ const MemberManagement = () => {
     }
   };
 
-  const handleDelete = (record) => {
-    setMembers(members.filter((m) => m.id !== record.id));
-    message.success('Member deleted successfully!');
+  const handleDelete = () => {
+    setMembers(members.filter((m) => !selectedRowKeys.includes(m.id)));
+    setSelectedRowKeys([]);
+    message.success('Members deleted successfully!');
   };
+
   const handleEdit = (record) => {
     setEditData(record);
     form.setFieldsValue(record);
@@ -164,13 +170,90 @@ const MemberManagement = () => {
     setSelectedMember(record);
     setVisiblePopupCard(true);
   };
+  const handleDisable = () => {
+    setDisabledMembers([...disabledMembers, ...selectedRowKeys]);
+    setSelectedRowKeys([]);
+  };
+
+  const handleEnable = () => {
+    setDisabledMembers(
+      disabledMembers.filter((id) => !selectedRowKeys.includes(id))
+    );
+    setSelectedRowKeys([]);
+  };
+
+  const isDisabled = (record) => {
+    return disabledMembers.includes(record.id);
+  };
+
+  const onSelectChange = (selectedRowKeys) => {
+    setSelectedRowKeys(selectedRowKeys);
+  };
+
+  const rowSelection = {
+    selectedRowKeys,
+    onChange: onSelectChange,
+  };
+
+  const rowClassName = (record) => {
+    return isDisabled(record) ? 'disabled-row' : '';
+  };
+
+  const filteredMembers = members.filter((member) => {
+    // Filter by name
+    const fullName = `${member.name} ${member.surname}`.toLowerCase();
+    if (searchQuery && fullName.indexOf(searchQuery.toLowerCase()) === -1) {
+      return false;
+    }
+    // Filter by age
+    if (ageFilter && member.age !== ageFilter) {
+      return false;
+    }
+    return true;
+  });
 
   return (
     <div>
       <Button type="primary" onClick={showModal}>
         Add Member
       </Button>
-      <Table dataSource={members} rowKey="id">
+      <Button
+        type="danger"
+        onClick={handleDelete}
+        disabled={selectedRowKeys.length === 0}
+      >
+        Delete Selected
+      </Button>
+      <Button onClick={handleDisable} disabled={selectedRowKeys.length === 0}>
+        Disable Selected
+      </Button>
+      <Button onClick={handleEnable} disabled={selectedRowKeys.length === 0}>
+        Enable Selected
+      </Button>
+      <Input
+        placeholder="Search by name"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        style={{ width: 200, marginLeft: 10 }}
+      />
+      <Input
+        placeholder="Filter by age"
+        type="number"
+        value={ageFilter}
+        onChange={(e) =>
+          setAgeFilter(e.target.value !== '' ? parseInt(e.target.value) : null)
+        }
+        style={{ width: 120, marginLeft: 10 }}
+      />
+      <span style={{ marginLeft: 10 }}>
+        {`Total Results: ${filteredMembers.length}`}
+      </span>
+      <Table
+        dataSource={filteredMembers}
+        rowKey="id"
+        rowSelection={rowSelection}
+        rowClassName={rowClassName}
+      >
         <Column title="ID" dataIndex="id" key="id" />
         <Column title="Name" dataIndex="name" key="name" />
         <Column title="Surname" dataIndex="surname" key="surname" />
@@ -223,6 +306,16 @@ const MemberManagement = () => {
               </Button>
               <Button type="link" onClick={() => handleEdit(record)}>
                 <EditOutlined /> Edit
+              </Button>
+              <Button
+                type="link"
+                onClick={() =>
+                  isDisabled(record)
+                    ? handleEnable(record)
+                    : handleDisable(record)
+                }
+              >
+                {isDisabled(record) ? 'Enable' : 'Disable'}
               </Button>
               <Button type="link" onClick={() => handleDelete(record)}>
                 <DeleteOutlined />
