@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom'; 
 import {
   Table,
   Button,
@@ -18,6 +19,7 @@ import {
   DeleteOutlined,
 } from '@ant-design/icons';
 import moment from 'moment';
+import FinancePage from '../finance/finance';
 
 const { Meta } = Card;
 
@@ -166,10 +168,11 @@ const MemberManagement = () => {
     // Handle file changes here if needed
   };
 
-  const handleView = (record) => {
-    setSelectedMember(record);
-    setVisiblePopupCard(true);
-  };
+   const handleView = (record) => {
+     setSelectedMember(record);
+     setVisiblePopupCard(true);
+   };
+
   const handleDisable = () => {
     setDisabledMembers([...disabledMembers, ...selectedRowKeys]);
     setSelectedRowKeys([]);
@@ -347,7 +350,7 @@ const MemberManagement = () => {
         {selectedMember && (
           <Card>
             <Button type="primary" style={{ marginBottom: '16px' }}>
-              Payments
+              <Link to={`/finance/${selectedMember.id}`}>Payments</Link>
             </Button>
             <Meta
               title="Name"
